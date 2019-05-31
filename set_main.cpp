@@ -9,22 +9,21 @@
 #include "camera.h"
 #include "material.h"
 
-// limited version of checkCudaErrors from helper_cuda.h in CUDA examples
+
 #define checkCudaErrors(val) check_cuda( (val), #val, __FILE__, __LINE__ )
 
 void check_cuda(cudaError_t result, char const *const func, const char *const file, int const line) {
     if (result) {
         std::cerr << "CUDA error = " << static_cast<unsigned int>(result) << " at " <<
             file << ":" << line << " '" << func << "' \n";
-        // Make sure we call CUDA Device Reset before exiting
+
         cudaDeviceReset();
         exit(99);
     }
 }
 
 
-
-__host__ vec3 color(const ray& r, hitable **world, curandState *local_rand_state) {
+ __device__ vec3 color(const ray& r, hitable **world, curandState *local_rand_state) {
     ray cur_ray = r;
     vec3 cur_attenuation = vec3(1.0,1.0,1.0);
     for(int i = 0; i < 50; i++) {
@@ -47,7 +46,7 @@ __host__ vec3 color(const ray& r, hitable **world, curandState *local_rand_state
             return cur_attenuation * c;
         }
     }
-    return vec3(0.0,0.0,0.0); // exceeded recursion
+    return vec3(0.0,0.0,0.0); 
 }
 
 __global__ void rand_init(curandState *rand_state) {
@@ -146,9 +145,9 @@ int main() {
 
     int nx = 1200/prop;
     int ny = 800/prop;
-    int ns = 10/prop;
-    int tx = 8/prop;
-    int ty = 8/prop;
+    int ns = 10;
+    int tx = 8;
+    int ty = 8;
 
     std::cerr << "Rendering a " << nx << "x" << ny << " image with " << ns << " samples per pixel ";
     std::cerr << "in " << tx << "x" << ty << " blocks.\n";
@@ -158,30 +157,30 @@ int main() {
 
     // allocate FB
     vec3 *fb;
-    checkCudaErrors(cudaMallocManaged((void **)&fb, fb_size));
+    cudaMallocManaged((void **)&fb, fb_size);
 
     // allocate random state
     curandState *d_rand_state;
-    checkCudaErrors(cudaMalloc((void **)&d_rand_state, num_pixels*sizeof(curandState)));
+    cudaMalloc((void **)&d_rand_state, num_pixels*sizeof(curandState));
     curandState *d_rand_state2;
-    checkCudaErrors(cudaMalloc((void **)&d_rand_state2, 1*sizeof(curandState)));
+    cudaMalloc((void **)&d_rand_state2, 1*sizeof(curandState));
 
     // we need that 2nd random state to be initialized for the world creation
     rand_init<<<1,1>>>(d_rand_state2);
-    checkCudaErrors(cudaGetLastError());
-    checkCudaErrors(cudaDeviceSynchronize());
+    cudaGetLastError();
+    cudaDeviceSynchronize();
 
     // make our world of hitables & the camera
     hitable **d_list;
     int num_hitables = 22*22+1+3;
-    checkCudaErrors(cudaMalloc((void **)&d_list, num_hitables*sizeof(hitable *)));
+    cudaMalloc((void **)&d_list, num_hitables*sizeof(hitable *));
     hitable **d_world;
-    checkCudaErrors(cudaMalloc((void **)&d_world, sizeof(hitable *)));
+    cudaMalloc((void **)&d_world, sizeof(hitable *));
     camera **d_camera;
-    checkCudaErrors(cudaMalloc((void **)&d_camera, sizeof(camera *)));
+    cudaMalloc((void **)&d_camera, sizeof(camera *));
     create_world<<<1,1>>>(d_list, d_world, d_camera, nx, ny, d_rand_state2);
-    checkCudaErrors(cudaGetLastError());
-    checkCudaErrors(cudaDeviceSynchronize());
+    cudaGetLastError();
+    cudaDeviceSynchronize();
 
     clock_t start, stop;
     start = clock();
@@ -189,11 +188,11 @@ int main() {
     dim3 blocks(nx/tx+1,ny/ty+1);
     dim3 threads(tx,ty);
     render_init<<<blocks, threads>>>(nx, ny, d_rand_state);
-    checkCudaErrors(cudaGetLastError());
-    checkCudaErrors(cudaDeviceSynchronize());
+    cudaGetLastError();
+    cudaDeviceSynchronize();
     render<<<blocks, threads>>>(fb, nx, ny,  ns, d_camera, d_world, d_rand_state);
-    checkCudaErrors(cudaGetLastError());
-    checkCudaErrors(cudaDeviceSynchronize());
+    cudaGetLastError();
+    cudaDeviceSynchronize();
     stop = clock();
     double timer_seconds = ((double)(stop - start)) / CLOCKS_PER_SEC;
     std::cerr << "took " << timer_seconds << " seconds.\n";
@@ -211,14 +210,14 @@ int main() {
     }
 
     // clean up
-    checkCudaErrors(cudaDeviceSynchronize());
+    cudaDeviceSynchronize();
     free_world<<<1,1>>>(d_list,d_world,d_camera);
-    checkCudaErrors(cudaGetLastError());
-    checkCudaErrors(cudaFree(d_camera));
-    checkCudaErrors(cudaFree(d_world));
-    checkCudaErrors(cudaFree(d_list));
-    checkCudaErrors(cudaFree(d_rand_state));
-    checkCudaErrors(cudaFree(fb));
+    cudaGetLastError();
+    cudaFree(d_camera);
+    cudaFree(d_world);
+    cudaFree(d_list);
+    cudaFree(d_rand_state);
+    cudaFree(fb);
 
     cudaDeviceReset();
 
