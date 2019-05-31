@@ -22,11 +22,8 @@ void check_cuda(cudaError_t result, char const *const func, const char *const fi
     }
 }
 
-// Matching the C++ code would recurse enough into color() calls that
-// it was blowing up the stack, so we have to turn this into a
-// limited-depth loop instead.  Later code in the book limits to a max
-// depth of 50, so we adapt this a few chapters early on the GPU.
-__device__ vec3 color(const ray& r, hitable **world, curandState *local_rand_state) {
+
+__host__ __device__ vec3 color(const ray& r, hitable **world, curandState *local_rand_state) {
     ray cur_ray = r;
     vec3 cur_attenuation = vec3(1.0,1.0,1.0);
     for(int i = 0; i < 50; i++) {
