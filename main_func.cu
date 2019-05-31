@@ -11,6 +11,7 @@
 
 
 
+
  __device__ vec3 color(const ray& r, hitable **world, curandState *local_rand_state) {
     ray cur_ray = r;
     vec3 cur_attenuation = vec3(1.0,1.0,1.0);
@@ -78,17 +79,20 @@ __global__ void render(vec3 *fb, int max_x, int max_y, int ns, camera **cam, hit
 __global__ void create_world(hitable **d_list, hitable **d_world, camera **d_camera, int nx, int ny, curandState *rand_state) {
     if (threadIdx.x == 0 && blockIdx.x == 0) {
         curandState local_rand_state = *rand_state;
-        d_list[0] = new sphere(vec3(0,-1000.0,-1), 1000, new lambertian(vec3(0.5, 0.5, 0.5)));
+        d_list[0] = new sphere(vec3(0,-1000.0,-1), 1000,
+                               new lambertian(vec3(0.5, 0.5, 0.5)));
         int i = 1;
         for(int a = -11; a < 11; a++) {
             for(int b = -11; b < 11; b++) {
                 float choose_mat = RND;
                 vec3 center(a+RND,0.2,b+RND);
                 if(choose_mat < 0.8f) {
-                    d_list[i++] = new sphere(center, 0.2, new lambertian(vec3(RND*RND, RND*RND, RND*RND)));
+                    d_list[i++] = new sphere(center, 0.2,
+                                             new lambertian(vec3(RND*RND, RND*RND, RND*RND)));
                 }
                 else if(choose_mat < 0.95f) {
-                    d_list[i++] = new sphere(center, 0.2, new metal(vec3(0.5f*(1.0f+RND), 0.5f*(1.0f+RND), 0.5f*(1.0f+RND)), 0.5f*RND));
+                    d_list[i++] = new sphere(center, 0.2,
+                                             new metal(vec3(0.5f*(1.0f+RND), 0.5f*(1.0f+RND), 0.5f*(1.0f+RND)), 0.5f*RND));
                 }
                 else {
                     d_list[i++] = new sphere(center, 0.2, new dielectric(1.5));
@@ -126,12 +130,7 @@ __global__ void free_world(hitable **d_list, hitable **d_world, camera **d_camer
 
 int main() {
 
-    ofstream myfile;
-    myfile.open ("tempo.txt");
-    
-    for(int k = 1;k<11;k++) {
-
-    int prop = k;
+    int prop = 10;
 
     int nx = 1200/prop;
     int ny = 800/prop;
@@ -139,6 +138,8 @@ int main() {
     int tx = 8;
     int ty = 8;
 
+    std::cerr << "Rendering a " << nx << "x" << ny << " image with " << ns << " samples per pixel ";
+    std::cerr << "in " << tx << "x" << ty << " blocks.\n";
 
     int num_pixels = nx*ny;
     size_t fb_size = num_pixels*sizeof(vec3);
@@ -183,27 +184,17 @@ int main() {
     cudaDeviceSynchronize();
     stop = clock();
     double timer_seconds = ((double)(stop - start)) / CLOCKS_PER_SEC;
-
-
-    myfile << "Tamanho da Imagens x Tempo de Execução: ";
-    myfile << "\n";
-
-    myfile << "Tamanho da Imagem: "<< nx <<" x " << ny << " - Tempo de Execução: " << timer_seconds << "," << "\n";
+    std::cerr << "took " << timer_seconds << " seconds.\n";
 
     // Output FB as Image
-    
-
-    if(k==10){
-
-        std::cout << "P3\n" << nx << " " << ny << "\n255\n";
-        for (int j = ny-1; j >= 0; j--) {
-            for (int i = 0; i < nx; i++) {
-                size_t pixel_index = j*nx + i;
-                int ir = int(255.99*fb[pixel_index].r());
-                int ig = int(255.99*fb[pixel_index].g());
-                int ib = int(255.99*fb[pixel_index].b());
-                std::cout << ir << " " << ig << " " << ib << "\n";
-            }
+    std::cout << "P3\n" << nx << " " << ny << "\n255\n";
+    for (int j = ny-1; j >= 0; j--) {
+        for (int i = 0; i < nx; i++) {
+            size_t pixel_index = j*nx + i;
+            int ir = int(255.99*fb[pixel_index].r());
+            int ig = int(255.99*fb[pixel_index].g());
+            int ib = int(255.99*fb[pixel_index].b());
+            std::cout << ir << " " << ig << " " << ib << "\n";
         }
     }
 
@@ -219,9 +210,6 @@ int main() {
 
     cudaDeviceReset();
 
-    }
-
-    myfile.close();
 }
 
 
