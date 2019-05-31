@@ -8,6 +8,8 @@
 #include "hitable_list.h"
 #include "camera.h"
 #include "material.h"
+#include <chrono>
+using namespace std::chrono;
 
 
 
