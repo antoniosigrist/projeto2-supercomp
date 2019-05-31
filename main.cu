@@ -23,7 +23,7 @@ void check_cuda(cudaError_t result, char const *const func, const char *const fi
 }
 
 
-__host__ __device__ vec3 color(const ray& r, hitable **world, curandState *local_rand_state) {
+ __device__ vec3 color(const ray& r, hitable **world, curandState *local_rand_state) {
     ray cur_ray = r;
     vec3 cur_attenuation = vec3(1.0,1.0,1.0);
     for(int i = 0; i < 50; i++) {
