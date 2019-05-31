@@ -145,9 +145,9 @@ int main() {
 
     int nx = 1200/prop;
     int ny = 800/prop;
-    int ns = 10/prop;
-    int tx = 8/prop;
-    int ty = 8/prop;
+    int ns = 10;
+    int tx = 8;
+    int ty = 8;
 
     std::cerr << "Rendering a " << nx << "x" << ny << " image with " << ns << " samples per pixel ";
     std::cerr << "in " << tx << "x" << ty << " blocks.\n";
