@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+using namespace std;
 #include <time.h>
 #include <float.h>
 #include <curand_kernel.h>
