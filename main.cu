@@ -133,12 +133,12 @@ int main() {
     ofstream myfile;
     myfile.open ("tempo.txt");
     
-    for(int k = 1;k<11;k++) {
+    for(int k = 1;k<16;k++) {
 
     int prop = k;
 
-    int nx = 1200/prop;
-    int ny = 800/prop;
+    int nx = (int) 1200/prop;
+    int ny = (int) 800/prop;
     int ns = 10;
     int tx = 8;
     int ty = 8;
