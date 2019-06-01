@@ -105,7 +105,7 @@ __global__ void create_world(hitable **d_list, hitable **d_world, camera **d_cam
         *rand_state = local_rand_state;
         *d_world  = new hitable_list(d_list, 22*22+1+3);
 
-        vec3 lookfrom(13,2,3);
+        vec3 lookfrom(11,2,13);
         vec3 lookat(0,0,0);
         float dist_to_focus = 10.0; (lookfrom-lookat).length();
         float aperture = 0.1;
@@ -160,7 +160,7 @@ int main() {
     // we need that 2nd random state to be initialized for the world creation
     rand_init<<<1,1>>>(d_rand_state2);
 
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();
 
     // make our world of hitables & the camera
     hitable **d_list;
@@ -172,7 +172,7 @@ int main() {
     cudaMalloc((void **)&d_camera, sizeof(camera *));
     create_world<<<1,1>>>(d_list, d_world, d_camera, nx, ny, d_rand_state2);
 
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();
 
     clock_t start, stop;
     start = clock();
@@ -183,7 +183,7 @@ int main() {
     cudaDeviceSynchronize();
     render<<<blocks, threads>>>(fb, nx, ny,  ns, d_camera, d_world, d_rand_state);
 
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();
     stop = clock();
     double timer_seconds = ((double)(stop - start)) / CLOCKS_PER_SEC;
 
@@ -196,7 +196,7 @@ int main() {
     // Output FB as Image
     
 
-    if(k==1){
+    if(k==3){
 
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
         for (int j = ny-1; j >= 0; j--) {
