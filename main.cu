@@ -160,7 +160,7 @@ int main() {
     // we need that 2nd random state to be initialized for the world creation
     rand_init<<<1,1>>>(d_rand_state2);
 
-    //cudaDeviceSynchronize();
+    cudaDeviceSynchronize();
 
     // make our world of hitables & the camera
     hitable **d_list;
@@ -172,7 +172,7 @@ int main() {
     cudaMalloc((void **)&d_camera, sizeof(camera *));
     create_world<<<1,1>>>(d_list, d_world, d_camera, nx, ny, d_rand_state2);
 
-    //cudaDeviceSynchronize();
+    cudaDeviceSynchronize();
 
     clock_t start, stop;
     start = clock();
@@ -183,7 +183,7 @@ int main() {
     cudaDeviceSynchronize();
     render<<<blocks, threads>>>(fb, nx, ny,  ns, d_camera, d_world, d_rand_state);
 
-    //cudaDeviceSynchronize();
+    cudaDeviceSynchronize();
     stop = clock();
     double timer_seconds = ((double)(stop - start)) / CLOCKS_PER_SEC;
 
