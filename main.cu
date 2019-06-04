@@ -153,7 +153,7 @@ int main() {
 
 
     vec3 *fb;
-    cudaMallocManaged((void **)&fb, fb_size);
+    cudaMallocManaged((void **)&fb, fb_size); //aloca lista do tamanho do numero de pixels da imagem
 
   
     curandState *d_rand_state;
@@ -166,15 +166,15 @@ int main() {
     cudaDeviceSynchronize();
 
     hitable **d_list;
-    int num_hitables = 500;
-    cudaMalloc((void **)&d_list, num_hitables*sizeof(hitable *));
+    int num_hitables = 489; //tem que ser maior ou igual a 488 que é o numero de bolinhas criadas :)
+    cudaMalloc((void **)&d_list, num_hitables*sizeof(hitable *)); //aloca hitables
     hitable **d_world;
     cudaMalloc((void **)&d_world, sizeof(hitable *));
     camera **d_camera;
     cudaMalloc((void **)&d_camera, sizeof(camera *));
     create_world<<<1,1>>>(d_list, d_world, d_camera, nx, ny, d_rand_state2); //cria mundo randomico
 
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize(); 
 
     clock_t start, stop;
     start = clock();
