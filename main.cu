@@ -163,7 +163,7 @@ int main() {
 
     rand_init<<<1,1>>>(d_rand_state2);
 
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();
 
     hitable **d_list;
     int num_hitables = 489; //tem que ser maior ou igual a 488 que é o numero de bolinhas criadas :)
@@ -185,7 +185,7 @@ int main() {
     cudaDeviceSynchronize();
     render<<<blocks, threads>>>(fb, nx, ny,  ns, d_camera, d_world, d_rand_state); // renderiza a imagem (maior parte do processamento está aqui)
 
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();
     stop = clock();
     double timer_seconds = ((double)(stop - start)) / CLOCKS_PER_SEC;
 
