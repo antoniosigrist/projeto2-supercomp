@@ -166,7 +166,7 @@ int main() {
     cudaDeviceSynchronize();
 
     hitable **d_list;
-    int num_hitables = 1000;//22*22+1+3;
+    int num_hitables = 1000000;//22*22+1+3;
     cudaMalloc((void **)&d_list, num_hitables*sizeof(hitable *));
     hitable **d_world;
     cudaMalloc((void **)&d_world, sizeof(hitable *));
