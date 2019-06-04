@@ -13,7 +13,7 @@ using namespace std;
 #include <chrono>
 using namespace std::chrono;
 
-#define seed 30
+#define seed 1000
 
  __device__ vec3 color(const ray& r, hitable **world, curandState *local_rand_state) {
     ray cur_ray = r;
@@ -163,7 +163,7 @@ int main() {
 
     rand_init<<<1,1>>>(d_rand_state2); // inicializa kernel que cria seed no bloco 0 thread 0
 
-    //cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();  - Utilizado apenas para debug, não é necessário dado que threads são assincrona entre si, mas sequenciais entre elas
 
     hitable **d_list;
     int num_hitables = 489; //tem que ser maior ou igual a 488 que é o numero de bolinhas criadas :)
@@ -182,7 +182,7 @@ int main() {
     dim3 blocks(nx/tx+1,ny/ty+1); //define o numero de blocos (tx e ty são multiplos de 8 já que a arquitetura de 8x8 threads, garantindo que cada bloco faca um numero pareceido de processamento)
     dim3 threads(tx,ty);
     render_init<<<blocks, threads>>>(nx, ny, d_rand_state); //cria o kernel de tamanho block x threads
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();
 
     render<<<blocks, threads>>>(fb, nx, ny,  ns, d_camera, d_world, d_rand_state); // renderiza a imagem no tamanho do bloco e threads estabelicidos, garantindo o mesmo cenário para todas as threads (maior parte do processamento está aqui)
 
