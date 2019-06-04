@@ -69,6 +69,7 @@ __global__ void render(vec3 *fb, int max_x, int max_y, int ns, camera **cam, hit
         float u = float(i + curand_uniform(&local_rand_state)) / float(max_x);
         float v = float(j + curand_uniform(&local_rand_state)) / float(max_y);
         ray r = (*cam)->get_ray(u, v, &local_rand_state);
+        
         col += color(r, world, &local_rand_state);
     }
     rand_state[pixel_index] = local_rand_state;
@@ -91,7 +92,7 @@ __global__ void create_world(hitable **d_list, hitable **d_world, camera **d_cam
                 float choose_mat = RND;
                 vec3 center(a+RND,0.2,b+RND);
                 if(choose_mat < 0.8f) {
-                    d_list[i++] = new sphere(center, 0.2, new lambertian(vec3(RND*RND, RND*RND, RND*RND)));
+                    d_list[i++] = new sphere(center, 0.2, new lambertian(vec3(curand_uniform(&local_rand_state)*curand_uniform(&local_rand_state), RND*RND, RND*RND)));
                 }
                 else if(choose_mat < 0.95f) {
                     d_list[i++] = new sphere(center, 0.2, new metal(vec3(0.5f*(1.0f+RND), 0.5f*(1.0f+RND), 0.5f*(1.0f+RND)), 0.5f*RND));
@@ -153,7 +154,7 @@ int main() {
 
 
     vec3 *fb;
-    cudaMallocManaged((void **)&fb, fb_size); //aloca lista do tamanho do numero de pixels da imagem
+    cudaMallocManaged((void **)&fb, fb_size); //aloca lista do tamanho do numero de pixels da imagem. Cudamallocmanage "copia" o mesmo endereco de memoria para CPU e GPU.
 
   
     curandState *d_rand_state;
@@ -174,7 +175,6 @@ int main() {
     cudaMalloc((void **)&d_camera, sizeof(camera *));
     create_world<<<1,1>>>(d_list, d_world, d_camera, nx, ny, d_rand_state2); //cria mundo randomico
 
-    //cudaDeviceSynchronize(); 
 
     clock_t start, stop;
     start = clock();
@@ -182,7 +182,7 @@ int main() {
     dim3 blocks(nx/tx+1,ny/ty+1); //define o numero de blocos (tx e ty são multiplos de 8 já que a arquitetura de 8x8 threads, garantindo que cada bloco faca um numero pareceido de processamento)
     dim3 threads(tx,ty);
     render_init<<<blocks, threads>>>(nx, ny, d_rand_state); //cria o kernel de tamanho block x threads
-    //cudaDeviceSynchronize();
+
 
     render<<<blocks, threads>>>(fb, nx, ny,  ns, d_camera, d_world, d_rand_state); // renderiza a imagem no tamanho do bloco e threads estabelicidos, garantindo o mesmo cenário para todas as threads (maior parte do processamento está aqui)
 
@@ -213,7 +213,6 @@ int main() {
     }
 
     // limpando a memoria alocada
-    //cudaDeviceSynchronize();
 
     free_world<<<1,1>>>(d_list,d_world,d_camera);
 
