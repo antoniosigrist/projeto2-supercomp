@@ -137,7 +137,7 @@ int main() {
     ofstream myfile;
     myfile.open ("tempo.txt");
     
-    for(int k = 4;k<5;k++) {
+    for(int k = 5;k<6;k++) {
 
     int prop = k;
 
