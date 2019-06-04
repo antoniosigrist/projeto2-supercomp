@@ -186,19 +186,19 @@ int main() {
 
     render<<<blocks, threads>>>(fb, nx, ny,  ns, d_camera, d_world, d_rand_state); // renderiza a imagem no tamanho do bloco e threads estabelicidos, garantindo o mesmo cenário para todas as threads (maior parte do processamento está aqui)
 
-    cudaDeviceSynchronize();
+
     stop = clock();
     double timer_seconds = ((double)(stop - start)) / CLOCKS_PER_SEC;
 
 
     myfile << "Tamanho da Imagens x Tempo de Execução: ";
     myfile << "\n";
-
     myfile << "Tamanho da Imagem: "<< nx <<" x " << ny << " - Tempo de Execução: " << timer_seconds << "," << "\n"; //escreve tempo de execucao e tamanho da imagem da imagem rodada.
 
     // Como estamos realizando diversos testes de tamanhos de imagem diferente, desejamos que apenas uma imagem seja criada para podermos analisar a qualidade
-    
     if(k==2){ //devolve apenas os pixels do tamanho de prop==2
+
+        cudaDeviceSynchronize(); //garante que processamento já acabou para acessar dados de fb
 
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
         for (int j = ny-1; j >= 0; j--) {
@@ -213,7 +213,7 @@ int main() {
     }
 
     // limpando a memoria alocada
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();
 
     free_world<<<1,1>>>(d_list,d_world,d_camera);
 
