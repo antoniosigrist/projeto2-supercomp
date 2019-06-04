@@ -166,7 +166,7 @@ int main() {
     cudaDeviceSynchronize();
 
     hitable **d_list;
-    int num_hitables = 22*22+1+3;
+    int num_hitables = 1000;//22*22+1+3;
     cudaMalloc((void **)&d_list, num_hitables*sizeof(hitable *));
     hitable **d_world;
     cudaMalloc((void **)&d_world, sizeof(hitable *));
@@ -197,7 +197,7 @@ int main() {
 
     // Como estamos realizando diversos testes de tamanhos de imagem diferente, desejamos que apenas uma imagem seja criada para podermos analisar a qualidade
     
-    if(k==3){
+    if(k==2){
 
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
         for (int j = ny-1; j >= 0; j--) {
