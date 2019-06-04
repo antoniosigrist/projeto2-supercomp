@@ -43,7 +43,7 @@ using namespace std::chrono;
 
 __global__ void rand_init(curandState *rand_state) {
     if (threadIdx.x == 0 && blockIdx.x == 0) {
-        curand_init(seed, 0, 0, rand_state);
+        curand_init(seed, 0, 0, rand_state); //cria uma seed na thread 0 que vai garantir mesma seed para todas as threads
     }
 }
 
@@ -54,7 +54,7 @@ __global__ void render_init(int max_x, int max_y, curandState *rand_state) {
         return;
     int pixel_index = j*max_x + i;
     
-    curand_init(seed, pixel_index, 0, &rand_state[pixel_index]);
+    curand_init(seed, pixel_index, 0, &rand_state[pixel_index]); //repassa o mesmo rand_state para os threads dos blocos utilizados na compilacao para garanti
 }
 
 __global__ void render(vec3 *fb, int max_x, int max_y, int ns, camera **cam, hitable **world, curandState *rand_state) {
@@ -137,7 +137,7 @@ int main() {
     ofstream myfile;
     myfile.open ("tempo.txt");
     
-    for(int k = 1;k<5;k++) {
+    for(int k = 1;k<3;k++) {
 
     int prop = k;
 
@@ -149,7 +149,7 @@ int main() {
 
 
     int num_pixels = nx*ny;
-    size_t fb_size = num_pixels*sizeof(vec3);
+    size_t fb_size = num_pixels*sizeof(vec3); //aloca tamanho do vetor fb para cada pixel caber um vec3
 
 
     vec3 *fb;
@@ -161,7 +161,7 @@ int main() {
     curandState *d_rand_state2;
     cudaMalloc((void **)&d_rand_state2, 1*sizeof(curandState));
 
-    rand_init<<<1,1>>>(d_rand_state2);
+    rand_init<<<1,1>>>(d_rand_state2); // inicializa kernel que cria seed no bloco 0 thread 0
 
     //cudaDeviceSynchronize();
 
@@ -179,13 +179,14 @@ int main() {
     clock_t start, stop;
     start = clock();
 
-    dim3 blocks(nx/tx+1,ny/ty+1);
+    dim3 blocks(nx/tx+1,ny/ty+1); //define o numero de blocos (tx e ty são multiplos de 8 já que a arquitetura de 8x8 threads, garantindo que cada bloco faca um numero pareceido de processamento)
     dim3 threads(tx,ty);
     render_init<<<blocks, threads>>>(nx, ny, d_rand_state); //cria o kernel de tamanho block x threads
     cudaDeviceSynchronize();
-    render<<<blocks, threads>>>(fb, nx, ny,  ns, d_camera, d_world, d_rand_state); // renderiza a imagem (maior parte do processamento está aqui)
 
-    //cudaDeviceSynchronize();
+    render<<<blocks, threads>>>(fb, nx, ny,  ns, d_camera, d_world, d_rand_state); // renderiza a imagem no tamanho do bloco e threads estabelicidos, garantindo o mesmo cenário para todas as threads (maior parte do processamento está aqui)
+
+    cudaDeviceSynchronize();
     stop = clock();
     double timer_seconds = ((double)(stop - start)) / CLOCKS_PER_SEC;
 
@@ -193,25 +194,25 @@ int main() {
     myfile << "Tamanho da Imagens x Tempo de Execução: ";
     myfile << "\n";
 
-    myfile << "Tamanho da Imagem: "<< nx <<" x " << ny << " - Tempo de Execução: " << timer_seconds << "," << "\n";
+    myfile << "Tamanho da Imagem: "<< nx <<" x " << ny << " - Tempo de Execução: " << timer_seconds << "," << "\n"; //escreve tempo de execucao e tamanho da imagem da imagem rodada.
 
     // Como estamos realizando diversos testes de tamanhos de imagem diferente, desejamos que apenas uma imagem seja criada para podermos analisar a qualidade
     
-    if(k==2){
+    if(k==2){ //devolve apenas os pixels do tamanho de prop==2
 
         std::cout << "P3\n" << nx << " " << ny << "\n255\n";
         for (int j = ny-1; j >= 0; j--) {
             for (int i = 0; i < nx; i++) {
                 size_t pixel_index = j*nx + i;
-                int ir = int(255.99*fb[pixel_index].r());
-                int ig = int(255.99*fb[pixel_index].g());
-                int ib = int(255.99*fb[pixel_index].b());
+                int ir = int(255.99*fb[pixel_index].r()); //pega cor vermelha de fb
+                int ig = int(255.99*fb[pixel_index].g()); // pega cor verde de fb
+                int ib = int(255.99*fb[pixel_index].b());//pega cor azul de fb
                 std::cout << ir << " " << ig << " " << ib << "\n";
             }
         }
     }
 
-    // limpando a memoria
+    // limpando a memoria alocada
     cudaDeviceSynchronize();
 
     free_world<<<1,1>>>(d_list,d_world,d_camera);
@@ -227,7 +228,7 @@ int main() {
 
     }
 
-    myfile.close();
+    myfile.close(); //fecha arquivo de escrita
 }
 
 
