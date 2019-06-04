@@ -13,7 +13,7 @@ using namespace std;
 #include <chrono>
 using namespace std::chrono;
 
-
+#define seed 30
 
  __device__ vec3 color(const ray& r, hitable **world, curandState *local_rand_state) {
     ray cur_ray = r;
@@ -43,7 +43,7 @@ using namespace std::chrono;
 
 __global__ void rand_init(curandState *rand_state) {
     if (threadIdx.x == 0 && blockIdx.x == 0) {
-        curand_init(1984, 0, 0, rand_state);
+        curand_init(seed, 0, 0, rand_state);
     }
 }
 
@@ -54,7 +54,7 @@ __global__ void render_init(int max_x, int max_y, curandState *rand_state) {
         return;
     int pixel_index = j*max_x + i;
     
-    curand_init(1984, pixel_index, 0, &rand_state[pixel_index]);
+    curand_init(seed, pixel_index, 0, &rand_state[pixel_index]);
 }
 
 __global__ void render(vec3 *fb, int max_x, int max_y, int ns, camera **cam, hitable **world, curandState *rand_state) {
