@@ -55,7 +55,7 @@ __global__ void render_init(int max_x, int max_y, curandState *rand_state) {
         return;
     int pixel_index = j*max_x + i;
     
-    curand_init(seed, pixel_index, 0, &rand_state[pixel_index]); //repassa o mesmo rand_state para os threads dos blocos utilizados na compilacao para garanti
+    curand_init(seed, pixel_index, 0, &rand_state[pixel_index]); //repassa o mesmo rand_state para os threads dos blocos utilizados na compilacao para garantir consistencia. 
 }
 
 __global__ void render(vec3 *fb, int max_x, int max_y, int ns, camera **cam, hitable **world, curandState *rand_state) {
@@ -78,7 +78,7 @@ __global__ void render(vec3 *fb, int max_x, int max_y, int ns, camera **cam, hit
     col[0] = sqrt(col[0]);
     col[1] = sqrt(col[1]);
     col[2] = sqrt(col[2]);
-    fb[pixel_index] = col; //coloca o resultado para fb para ser acessado do host
+    fb[pixel_index] = col; //coloca o resultado em fb para ser acessado do host ao final do código
 }
 
 
@@ -124,9 +124,9 @@ __global__ void create_world(hitable **d_list, hitable **d_world, camera **d_cam
     }
 }
 
-__global__ void free_world(hitable **d_list, hitable **d_world, camera **d_camera) {
+__global__ void free_world(hitable **d_list, hitable **d_world, camera **d_camera) { //deleta espaco alocado para cada esfera
     for(int i=0; i < 22*22+1+3; i++) { 
-        delete ((sphere *)d_list[i])->mat_ptr; //deleta espaco alocado para cada esfera
+        delete ((sphere *)d_list[i])->mat_ptr; 
         delete d_list[i];
     }
     delete *d_world; 
@@ -137,14 +137,18 @@ int main() {
 
     ofstream myfile;
     myfile.open ("tempo.txt");
-    
-    for(int k = 1;k<2;k++) {
 
-    int prop = k;
+    int num_testes = 30;
+
+    int prop;
+    
+    for(int k = 1;k<num_testes;k++) {
+
+    prop = k;
 
     int nx = (int) 1200/prop;
     int ny = (int) 800/prop;
-    int ns = 20;
+    int ns = 10;
     int tx = 8;
     int ty = 8;
 
@@ -174,7 +178,7 @@ int main() {
     camera **d_camera;
     cudaMalloc((void **)&d_camera, sizeof(camera *));
 
-    create_world<<<1,1>>>(d_list, d_world, d_camera, nx, ny, d_rand_state2); //cria mundo randomico
+    create_world<<<1,1>>>(d_list, d_world, d_camera, nx, ny, d_rand_state2); //cria mundo randomico utilizando o estado incial criado por rand_init no bloco 0 thread 0
 
 
     clock_t start, stop;
@@ -183,7 +187,7 @@ int main() {
     dim3 blocks(nx/tx+1,ny/ty+1); //define o numero de blocos (tx e ty são multiplos de 8 já que a arquitetura de 8x8 threads, garantindo que cada bloco faca um numero pareceido de processamento)
     dim3 threads(tx,ty);
 
-    render_init<<<blocks, threads>>>(nx, ny, d_rand_state); //cria o kernel de tamanho block x threads
+    render_init<<<blocks, threads>>>(nx, ny, d_rand_state); //cria o kernel de tamanho block x threads. 
 
 
     render<<<blocks, threads>>>(fb, nx, ny,  ns, d_camera, d_world, d_rand_state); // renderiza a imagem no tamanho do bloco e threads estabelicidos, garantindo o mesmo cenário para todas as threads (maior parte do processamento está aqui)
@@ -198,7 +202,7 @@ int main() {
     myfile << "Tamanho da Imagem: "<< nx <<" x " << ny << " - Tempo de Execução: " << timer_seconds << "," << "\n"; //escreve tempo de execucao e tamanho da imagem da imagem rodada.
 
     // Como estamos realizando diversos testes de tamanhos de imagem diferente, desejamos que apenas uma imagem seja criada para podermos analisar a qualidade
-    if(k==1){ //devolve apenas os pixels do tamanho de prop==2
+    if(k==2){ //devolve apenas os pixels do tamanho de prop==2
 
         cudaDeviceSynchronize(); //garante que processamento já acabou para acessar dados de fb
 
