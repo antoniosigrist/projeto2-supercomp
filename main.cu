@@ -178,7 +178,7 @@ int main() {
     start = clock();
 
 
-    cria_cena<<<1,1>>>(d_rand_state2,d_list, d_world, d_camera, nx, ny);  // inicializa kernel que cria seed no bloco 0 thread 0
+    cria_cena<<<1,1>>>(d_rand_state2,d_list, d_world, d_camera, nx, ny);  // inicializa kernel que cria seed no bloco 0 thread 0. Cria o mundo em que sera processada a imagem tambem.
 
 
     dim3 blocks(nx/tx+1,ny/ty+1); //define o numero de blocos (tx e ty são multiplos de 8 já que a arquitetura de 8x8 threads, garantindo que cada bloco faca um numero pareceido de processamento)
