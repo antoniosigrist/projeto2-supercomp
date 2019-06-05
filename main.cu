@@ -13,6 +13,7 @@ using namespace std;
 #include <chrono>
 using namespace std::chrono;
 
+#define RND (curand_uniform(&local_rand_state))
 #define seed 1000
 
  __device__ vec3 color(const ray& r, hitable **world, curandState *local_rand_state) {
@@ -69,7 +70,7 @@ __global__ void render(vec3 *fb, int max_x, int max_y, int ns, camera **cam, hit
         float u = float(i + curand_uniform(&local_rand_state)) / float(max_x);
         float v = float(j + curand_uniform(&local_rand_state)) / float(max_y);
         ray r = (*cam)->get_ray(u, v, &local_rand_state);
-        
+
         col += color(r, world, &local_rand_state);
     }
     rand_state[pixel_index] = local_rand_state;
@@ -80,7 +81,6 @@ __global__ void render(vec3 *fb, int max_x, int max_y, int ns, camera **cam, hit
     fb[pixel_index] = col; //coloca o resultado para fb para ser acessado do host
 }
 
-#define RND (curand_uniform(&local_rand_state))
 
 __global__ void create_world(hitable **d_list, hitable **d_world, camera **d_camera, int nx, int ny, curandState *rand_state) {
     if (threadIdx.x == 0 && blockIdx.x == 0) {
@@ -110,7 +110,7 @@ __global__ void create_world(hitable **d_list, hitable **d_world, camera **d_cam
         *rand_state = local_rand_state;
         *d_world  = new hitable_list(d_list, 22*22+1+3);
 
-        vec3 lookfrom(11,2,13);
+        vec3 lookfrom(25,12,13);
         vec3 lookat(0,0,0);
         float dist_to_focus = 10.0; (lookfrom-lookat).length();
         float aperture = 0.1;
@@ -125,11 +125,11 @@ __global__ void create_world(hitable **d_list, hitable **d_world, camera **d_cam
 }
 
 __global__ void free_world(hitable **d_list, hitable **d_world, camera **d_camera) {
-    for(int i=0; i < 22*22+1+3; i++) {
-        delete ((sphere *)d_list[i])->mat_ptr;
+    for(int i=0; i < 22*22+1+3; i++) { 
+        delete ((sphere *)d_list[i])->mat_ptr; //deleta espaco alocado para cada esfera
         delete d_list[i];
     }
-    delete *d_world;
+    delete *d_world; 
     delete *d_camera;
 }
 
@@ -173,6 +173,7 @@ int main() {
     cudaMalloc((void **)&d_world, sizeof(hitable *));
     camera **d_camera;
     cudaMalloc((void **)&d_camera, sizeof(camera *));
+
     create_world<<<1,1>>>(d_list, d_world, d_camera, nx, ny, d_rand_state2); //cria mundo randomico
 
 
@@ -181,6 +182,7 @@ int main() {
 
     dim3 blocks(nx/tx+1,ny/ty+1); //define o numero de blocos (tx e ty são multiplos de 8 já que a arquitetura de 8x8 threads, garantindo que cada bloco faca um numero pareceido de processamento)
     dim3 threads(tx,ty);
+
     render_init<<<blocks, threads>>>(nx, ny, d_rand_state); //cria o kernel de tamanho block x threads
 
 
