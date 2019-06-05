@@ -138,7 +138,7 @@ int main() {
     ofstream myfile;
     myfile.open ("tempo.txt");
     
-    for(int k = 1;k<3;k++) {
+    for(int k = 1;k<2;k++) {
 
     int prop = k;
 
@@ -198,7 +198,7 @@ int main() {
     myfile << "Tamanho da Imagem: "<< nx <<" x " << ny << " - Tempo de Execução: " << timer_seconds << "," << "\n"; //escreve tempo de execucao e tamanho da imagem da imagem rodada.
 
     // Como estamos realizando diversos testes de tamanhos de imagem diferente, desejamos que apenas uma imagem seja criada para podermos analisar a qualidade
-    if(k==2){ //devolve apenas os pixels do tamanho de prop==2
+    if(k==1){ //devolve apenas os pixels do tamanho de prop==2
 
         cudaDeviceSynchronize(); //garante que processamento já acabou para acessar dados de fb
 
