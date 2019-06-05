@@ -144,7 +144,7 @@ int main() {
 
     int nx = (int) 1200/prop;
     int ny = (int) 800/prop;
-    int ns = 10;
+    int ns = 20;
     int tx = 8;
     int ty = 8;
 
