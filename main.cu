@@ -42,7 +42,8 @@ using namespace std::chrono;
     return vec3(0.0,0.0,0.0); 
 }
 
-__global__ void cria_cena(curandState *rand_state,hitable **d_list, hitable **d_world, camera **d_camera, int nx, int ny) {
+
+__global__ void cria_cena(curandState *rand_state,hitable **d_list, hitable **d_world, camera **d_camera, int nx, int ny) { // essa funçao foi desenvolvida diferentemente da sugerida no tutorial. Optei por realizar a chamada desse kernel uma vez, sem realizar nenhuma sincronização de devices para evitar aumento do tempo de processamento.
     if (threadIdx.x == 0 && blockIdx.x == 0) {
         curand_init(seed, 0, 0, rand_state); //cria uma seed na thread 0 que vai garantir mesma seed para todas as threads
 
@@ -104,7 +105,7 @@ __global__ void render(vec3 *fb, int max_x, int max_y, int ns, camera **cam, hit
     int j = threadIdx.y + blockIdx.y * blockDim.y;
     if((i >= max_x) || (j >= max_y)) 
         return; // garante que nao vai rodar alem dos tamanho definido no kernel
-    int pixel_index = j*max_x + i; // calcula a posicao do pixel no kernel
+    int pixel_index = j*max_x + i; // calcula a posicao do pixel dentro do bloco 
     curandState local_rand_state = rand_state[pixel_index]; 
     vec3 col(0,0,0);
     for(int s=0; s < ns; s++) {
@@ -119,7 +120,7 @@ __global__ void render(vec3 *fb, int max_x, int max_y, int ns, camera **cam, hit
     col[0] = sqrt(col[0]);
     col[1] = sqrt(col[1]);
     col[2] = sqrt(col[2]);
-    fb[pixel_index] = col; //coloca o resultado em fb para ser acessado do host ao final do código
+    fb[pixel_index] = col; //coloca o resultado em fb para ser acessado do host ao final do código. FB é uma variável alocada por cudamanaged.
 }
 
 
@@ -135,7 +136,7 @@ __global__ void free_world(hitable **d_list, hitable **d_world, camera **d_camer
 int main() {
 
     ofstream myfile;
-    myfile.open ("tempo.txt");
+    myfile.open ("tempo.txt"); // abre aquivo de texto que receberá os resultados dos testes feitos.
 
     int num_testes = 30;
 
@@ -143,7 +144,7 @@ int main() {
     
     for(int k = 1;k<num_testes;k++) {
 
-    prop = k;
+    prop = k; //varia o tamanho da imagem proporcionalmente ao valor dessa variável.
 
     int nx = (int) 1200/prop;
     int ny = (int) 800/prop;
@@ -153,6 +154,7 @@ int main() {
 
 
     int num_pixels = nx*ny;
+
     size_t fb_size = num_pixels*sizeof(vec3); //aloca tamanho do vetor fb para cada pixel caber um vec3
 
 
@@ -199,7 +201,7 @@ int main() {
     myfile << "Tamanho da Imagem: "<< nx <<" x " << ny << " - Tempo de Execução: " << timer_seconds << "," << "\n"; //escreve tempo de execucao e tamanho da imagem da imagem rodada.
 
     // Como estamos realizando diversos testes de tamanhos de imagem diferente, desejamos que apenas uma imagem seja criada para podermos analisar a qualidade
-    if(k==2){ //devolve apenas os pixels do tamanho de prop==2
+    if(k==2){ //devolve apenas os pixels do tamanho de prop==2 para gerar apenas uma imagem
 
         cudaDeviceSynchronize(); //garante que processamento já acabou para acessar dados de fb
 
@@ -215,7 +217,7 @@ int main() {
         }
     }
 
-    // limpando a memoria alocada
+    // limpando a memoria alocada para evitar memory leak.
 
     free_world<<<1,1>>>(d_list,d_world,d_camera);
 
